@@ -1,5 +1,11 @@
 # painbot protocol module
 
+## 분기
+
+master
+
+develop
+
 ## 구현 리스트
 
 ### 세팅
