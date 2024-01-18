@@ -11,7 +11,7 @@ class ParserCoroutineTest(unittest.TestCase):
         with ParserCoroutine() as parser:
             result = [parser.send(it) for it in data]
 
-        self.assertEqual([ParserCoroutine.MESSAGE_FAIL] * 2, result)
+        self.assertEqual([ParserMessage.FAIL] * 2, result)
     
     def test_simple_complete_data(self):
         data = b'\0020\0000\0000\000'
