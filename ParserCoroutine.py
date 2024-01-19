@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Generator
+from dataclasses import dataclass
 
 class ParserMessage(Enum):
     FAIL = "[이전 작업 오류] 시작 문자 받는 중..."
@@ -10,147 +12,127 @@ class ParserMessage(Enum):
     LOWPULSE_PULSE_VALUE = "저주파 펄스 값 받는 중..."
     LOWPULSE_V_VALUE = "저주파 전류값 받는 중..."
 
-class ParserCoroutine:
-    CODE_STX    =   b'\02'[0]
-    CODE_MODE_CONTINUOUS = b'0'[0]
-    CODE_MODE_PULSE = b'1'[0]
-    CODE_MODE_INTERVAL = b'1'[0]
-    CODE_MODE_500uS = b'0'[0]
-    CODE_MODE_250uS = b'1'[0]
+class PainMicrowaveMode(Enum):
+    CONTINUOUS = b'0'[0]
+    PULSE = b'1'[0]
 
-    RANGE_MICROWAVE_MIN = 0
-    RANGE_MICROWAVE_MAX = 3
-    RANGE_LOWPRASE_MIN  = 0
-    RANGE_LOWPULSE_MAX  = 50
-    RANGE_LOWPULSE_V_MIN = 0
-    RANGE_LOWPULSE_V_MAX = 100
+class PainLowPulseMode(Enum):
+    CONTINUOUS = b'0'[0]
+    INTERVAL = b'1'[0]
 
-    def __init__(self):
-        pass
+class PainLowPulsePulse(Enum):
+    PULSE_182Hz_500uS = b'0'[0]
+    PULSE_182Hz_250uS = b'1'[0]
 
-    def __enter__(self):
-        self._parser = self._parse()
-        next(self._parser)
-        return self._parser
+@dataclass(frozen=False)
+class MutableParserState:
+    message: ParserMessage = ParserMessage.START
+    microwave_mode: PainMicrowaveMode = PainMicrowaveMode.CONTINUOUS
+    microwave: int = 0
+    lowpulse_mode: PainLowPulseMode = PainLowPulseMode.CONTINUOUS
+    lowpulse: int = 0
+    lowpulse_pulse: PainLowPulsePulse = PainLowPulsePulse.PULSE_182Hz_500uS
+    lowpulse_v: int = 0
 
-    def __exit__(self, type, value, traceback):
-        pass
+@dataclass(frozen=True)
+class ImutablePainState:
+    microwave_mode: PainMicrowaveMode = PainMicrowaveMode.CONTINUOUS
+    microwave: int = 0
+    lowpulse_mode: PainLowPulseMode = PainLowPulseMode.CONTINUOUS
+    lowpulse: int = 0
+    lowpulse_pulse: PainLowPulsePulse = PainLowPulsePulse.PULSE_182Hz_500uS
+    lowpulse_v: int = 0
 
 
-    def _parse(self):
-        """
-        ParserCoroutine._parse
-        --------------------
+def flatten(data: Generator[bytes, None, None]):
+    for byte_array in data:
+        for byte_item in byte_array:
+            yield byte_item
 
-        ## 요약
+def _next_message(message: ParserMessage):
+    match message:
+        case ParserMessage.FAIL:
+            return ParserMessage.MICROWAVE_MODE
+        case ParserMessage.START:
+            return ParserMessage.MICROWAVE_MODE
+        case ParserMessage.MICROWAVE_MODE:
+            return ParserMessage.MICROWAVE_VALUE
+        case ParserMessage.MICROWAVE_VALUE:
+            return ParserMessage.LOWPULSE_MODE
+        case ParserMessage.LOWPULSE_MODE:
+            return ParserMessage.LOWPULSE_VALUE
+        case ParserMessage.LOWPULSE_VALUE:
+            return ParserMessage.LOWPULSE_PULSE_VALUE
+        case ParserMessage.LOWPULSE_PULSE_VALUE:
+            return ParserMessage.LOWPULSE_V_VALUE
+        case ParserMessage.LOWPULSE_V_VALUE:
+            return ParserMessage.START
 
-        파싱을 위한 코루틴을 만듭니다.
-
-        ## 입력
-
-        `int`를 받습니다.
-
-        ## 출력
-
-        `str` 또는 `dict` 을 받습니다.
-
-        ##예제
-
-        ```python
-        _parser = ParserCoroutine()._parse()
-        retval = _parser.send(2)
-        retval = _parser.send(b'0'[0])
-        ```
-
-        """
-
-        output = ParserMessage.START
-        success_output = {
-            "micro wave mode" : "continuous",
-            "micro wave value": 0,
-            "low frequency pulse mode"  : "continuous",
-            "low frequency pulse value" : 0,
-            "low frequency pulse pulse value" : "182Hz, 500uS",
-            "low frequency electric current" : 0
-        }
-        while True:
-            if ParserCoroutine.CODE_STX == (yield output):
-                output = ParserMessage.MICROWAVE_MODE
-                microwave_mode = (yield output)
-                if microwave_mode == ParserCoroutine.CODE_MODE_CONTINUOUS or microwave_mode == ParserCoroutine.CODE_MODE_PULSE:
-                    output = ParserMessage.MICROWAVE_VALUE
-                    microwave_value = (yield output)
-                    if ParserCoroutine.RANGE_MICROWAVE_MIN <= microwave_value <= ParserCoroutine.RANGE_MICROWAVE_MAX:
-                        output = ParserMessage.LOWPULSE_MODE
-                        lowpulse_mode = (yield output)
-                        if lowpulse_mode == ParserCoroutine.CODE_MODE_CONTINUOUS or lowpulse_mode == ParserCoroutine.CODE_MODE_INTERVAL:
-                            output = ParserMessage.LOWPULSE_VALUE
-                            lowpulse_value = (yield output)
-                            if ParserCoroutine.RANGE_LOWPRASE_MIN <= lowpulse_value <= ParserCoroutine.RANGE_LOWPULSE_MAX:
-                                output = ParserMessage.LOWPULSE_PULSE_VALUE
-                                lowpulse_pulse_value = (yield output)
-                                if lowpulse_pulse_value == ParserCoroutine.CODE_MODE_500uS or lowpulse_pulse_value == ParserCoroutine.CODE_MODE_250uS:
-                                    output = ParserMessage.LOWPULSE_V_VALUE
-                                    lowpulse_v_value = (yield output)
-                                    if ParserCoroutine.RANGE_LOWPULSE_V_MIN <= lowpulse_v_value <= ParserCoroutine.RANGE_LOWPULSE_V_MAX:
-                                        if microwave_mode == ParserCoroutine.CODE_MODE_CONTINUOUS:
-                                            success_output["micro wave mode"] = "continuous"
-                                        else:
-                                            success_output["micro wave mode"] = "pulse"
-
-                                        success_output["micro wave value"] = microwave_value
-
-                                        if lowpulse_mode == ParserCoroutine.CODE_MODE_CONTINUOUS:
-                                            success_output["low frequency pulse mode"] = "continuous"
-                                        else:
-                                            success_output["low frequency pulse mode"] = "interval"
-                                        
-                                        success_output["low frequency pulse value"] = lowpulse_value
-
-                                        if lowpulse_pulse_value == ParserCoroutine.CODE_MODE_500uS:
-                                            success_output["low frequency pulse pulse value"] = "182Hz,500uS"
-                                        else:
-                                            success_output["low frequency pulse pulse value"] = "182Hz,250uS"
-                                        
-                                        success_output["low frequency electric current"] = lowpulse_v_value
-                                        output = success_output.copy()
-                                    else:
-                                        output = ParserMessage.FAIL
-                                else:
-                                    output = ParserMessage.FAIL
-                            else:
-                                output = ParserMessage.FAIL
-                        else:
-                            output = ParserMessage.FAIL
-                    else:
-                        output = ParserMessage.FAIL
-                else:
-                    output = ParserMessage.FAIL
+def _update_state(state: MutableParserState, next: int):
+    match state.message:
+        case ParserMessage.MICROWAVE_MODE:
+            if next == PainMicrowaveMode.CONTINUOUS.value:
+                state.microwave_mode = PainMicrowaveMode.CONTINUOUS
+                state.message = _next_message(state.message)
+            elif next == PainMicrowaveMode.PULSE.value:
+                state.microwave_mode = PainMicrowaveMode.PULSE
+                state.message = _next_message(state.message)
             else:
-                output = ParserMessage.FAIL
-    
-    def parse(self, value : int):
-        return self._parser.send(value)
+                state.message = ParserMessage.FAIL
+        case ParserMessage.MICROWAVE_VALUE:
+            if next in range(0, 3 + 1):
+                state.microwave = next
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
+        case ParserMessage.LOWPULSE_MODE:
+            if next == PainLowPulseMode.CONTINUOUS.value:
+                state.lowpulse_mode = PainLowPulseMode.CONTINUOUS
+                state.message = _next_message(state.message)
+            elif next == PainLowPulseMode.INTERVAL.value:
+                state.lowpulse_mode = PainLowPulseMode.INTERVAL
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
+        case ParserMessage.LOWPULSE_VALUE:
+            if next in range(0, 50 + 1):
+                state.lowpulse = next
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
+        case ParserMessage.LOWPULSE_PULSE_VALUE:
+            if next == PainLowPulsePulse.PULSE_182Hz_500uS.value:
+                state.lowpulse_pulse = PainLowPulsePulse.PULSE_182Hz_500uS
+                state.message = _next_message(state.message)
+            elif next == PainLowPulsePulse.PULSE_182Hz_250uS.value:
+                state.lowpulse_pulse = PainLowPulsePulse.PULSE_182Hz_250uS
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
+        case ParserMessage.LOWPULSE_V_VALUE:
+            if next in range(0, 100 + 1):
+                state.lowpulse_v = next
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
+        case _: # FAIL, START
+            if next == 2:
+                state.message = _next_message(state.message)
+            else:
+                state.message = ParserMessage.FAIL
 
-
-"""
-예제 코드입니다.
-"""
-if __name__ == "__main__":
-    
-    import SerialWrapper
-    import time
-
-    with SerialWrapper.SerialWrapper("debug") as serial:
-        parser = ParserCoroutine()
-        with ParserCoroutine() as parser:
-            while True:
-                print(parser.send(serial.read()))
-                time.sleep(1)
-        #while True:
-        #    print(parser.parse(serial.read()))
-        #    time.sleep(1)
-
-
-
-
+def flatmap_parse(data: Generator[int, None, None]):
+    state = MutableParserState()
+    for next in data:
+        is_last = state.message == ParserMessage.LOWPULSE_V_VALUE
+        _update_state(state, next)
+        yield state.message
+        if is_last and state.message == ParserMessage.START:
+            yield ImutablePainState(
+                state.microwave_mode,
+                state.microwave,
+                state.lowpulse_mode,
+                state.lowpulse,
+                state.lowpulse_pulse,
+                state.lowpulse_v
+            )

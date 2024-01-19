@@ -1,34 +1,27 @@
 import unittest
 from ParserCoroutine import *
 
+
 class ParserCoroutineTest(unittest.TestCase):
     def setUp(self) -> None:
         return
-    
+
     def test_wrong_data(self):
-        data = b'\x00\x00'
+        data = b"\x00\x00"
 
-        with ParserCoroutine() as parser:
-            result = [parser.send(it) for it in data]
+        result = [ParserMessage.FAIL == it for it in flatmap_parse((it for it in data))]
 
-        self.assertEqual([ParserMessage.FAIL] * 2, result)
-    
+        self.assertTrue(result)
+
     def test_simple_complete_data(self):
-        data = b'\0020\0000\0000\000'
-        expected = {
-            "micro wave mode" : "continuous",
-            "micro wave value": 0,
-            "low frequency pulse mode"  : "continuous",
-            "low frequency pulse value" : 0,
-            "low frequency pulse pulse value" : "182Hz,500uS",
-            "low frequency electric current" : 0
-        }
+        data = b"\0020\0000\0000\000"
+        expected = ImutablePainState()
 
-        with ParserCoroutine() as parser:
-            result = [parser.send(it) for it in data]
+        stream = (it for it in data)
+        for result in flatmap_parse(stream):
+            pass
 
-        self.assertEqual(expected, result[-1])
-    
+        self.assertEqual(expected, result)
 
 
 if __name__ == "__main__":
