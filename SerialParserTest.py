@@ -1,5 +1,5 @@
 import unittest
-from ParserCoroutine import flatten, flatmap_parse, ParserMessage, ImutablePainState
+from ParserCoroutine import flatten, flatmap_parse, ParserMessage, ImmutablePainState
 from SerialWrapper import read_serial
 from mock import MagicMock
 from serial import Serial
@@ -15,14 +15,14 @@ class SerialParserTest(unittest.TestCase):
         self.assertEqual(b"test", self.serial.read())
 
     def test_basic_parse(self):
-        expected = [ImutablePainState()]
+        expected = [ImmutablePainState()]
         self.serial.read.return_value = b"\0020\0000\0000\000"
 
         stream = read_serial(self.serial)
         stream = take(stream, 1)
         stream = flatten(stream)
         stream = flatmap_parse(stream)
-        stream = filterIsType(stream, ImutablePainState)
+        stream = filterIsType(stream, ImmutablePainState)
 
         result = list(stream)
 

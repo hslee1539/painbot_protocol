@@ -15,7 +15,7 @@ class ParserCoroutineTest(unittest.TestCase):
 
     def test_simple_complete_data(self):
         data = b"\0020\0000\0000\000"
-        expected = ImutablePainState()
+        expected = ImmutablePainState()
 
         stream = (it for it in data)
         for result in flatmap_parse(stream):

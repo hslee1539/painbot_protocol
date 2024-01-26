@@ -35,7 +35,7 @@ class MutableParserState:
     lowpulse_v: int = 0
 
 @dataclass(frozen=True)
-class ImutablePainState:
+class ImmutablePainState:
     microwave_mode: PainMicrowaveMode = PainMicrowaveMode.CONTINUOUS
     microwave: int = 0
     lowpulse_mode: PainLowPulseMode = PainLowPulseMode.CONTINUOUS
@@ -128,7 +128,7 @@ def flatmap_parse(data: Generator[int, None, None]):
         _update_state(state, next)
         yield state.message
         if is_last and state.message == ParserMessage.START:
-            yield ImutablePainState(
+            yield ImmutablePainState(
                 state.microwave_mode,
                 state.microwave,
                 state.lowpulse_mode,
