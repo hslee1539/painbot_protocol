@@ -19,5 +19,5 @@ def render(state: Generator[PlotState, None, None]):
     plot(state)
 
 if __name__ == "__main__":
-    with Serial(port="COM3", baudrate=9600) as serial:
+    with Serial(port="COM3", baudrate=11520) as serial:
         render(model(use_case(repository(serial))))

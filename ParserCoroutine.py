@@ -32,6 +32,8 @@ def _next_message(message: ParserMessage):
         case ParserMessage.LOWPULSE_PULSE_VALUE:
             return ParserMessage.LOWPULSE_V_VALUE
         case ParserMessage.LOWPULSE_V_VALUE:
+            return ParserMessage.END
+        case ParserMessage.END:
             return ParserMessage.START
 
 
@@ -82,6 +84,13 @@ def _update_state(state: MutableParserState, next: int):
                 state.message = _next_message(state.message)
             else:
                 state.message = ParserMessage.FAIL
+        case ParserMessage.END:
+            if next == 3:
+                state.message = _next_message(state.message)
+            elif next == 2:
+                state.message = _next_message(ParserMessage.START)
+            else:
+                state.message = ParserMessage.FAIL
         case _:  # FAIL, START
             if next == 2:
                 state.message = _next_message(state.message)
@@ -91,8 +100,9 @@ def _update_state(state: MutableParserState, next: int):
 
 def flatmap_parse(data: Generator[int, None, None]):
     state = MutableParserState()
+    is_last = False
     for next in data:
-        is_last = state.message == ParserMessage.LOWPULSE_V_VALUE
+        is_last = state.message == ParserMessage.END
         _update_state(state, next)
         yield state.message
         if is_last and state.message == ParserMessage.START:
@@ -104,3 +114,13 @@ def flatmap_parse(data: Generator[int, None, None]):
                 state.lowpulse_pulse,
                 state.lowpulse_v,
             )
+    # empty 
+    if not is_last and state.message == ParserMessage.END:
+        yield ImmutablePainState(
+            state.microwave_mode,
+            state.microwave,
+            state.lowpulse_mode,
+            state.lowpulse,
+            state.lowpulse_pulse,
+            state.lowpulse_v,
+        )

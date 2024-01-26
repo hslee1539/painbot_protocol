@@ -11,6 +11,7 @@ class ParserMessage(Enum):
     LOWPULSE_VALUE = "저주파 출력값 받는 중..."
     LOWPULSE_PULSE_VALUE = "저주파 펄스 값 받는 중..."
     LOWPULSE_V_VALUE = "저주파 전류값 받는 중..."
+    END = "(option) 마지막 문자 받는 중..."
 
 
 class PainMicrowaveMode(Enum):
