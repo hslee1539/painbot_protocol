@@ -1,9 +1,9 @@
 import unittest
-from ParserCoroutine import flatten, flatmap_parse, ParserMessage, ImmutablePainState
-from SerialWrapper import read_serial
+from core_parser import flatten, flatmap_parse, ParserMessage, ImmutablePainState
+from core_serial import read_serial
 from mock import MagicMock
 from serial import Serial
-from GeneratorUtil import take, last, filterIsType
+from core_generator_util import take, last, filterIsType
 
 
 class SerialParserTest(unittest.TestCase):

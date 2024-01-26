@@ -1,7 +1,6 @@
 from typing import Generator, Callable
 
 
-
 def take(stream: Generator[any, any, None], m: int):
     if m > 0:
         m -= 1
@@ -22,8 +21,9 @@ def filterIsType(stream: Generator[any, any, None], cls: any):
         if type(i) == cls:
             yield i
 
+
 def scan(fn: Callable[[any, any], any], stream: Generator[any, any, None], init: any):
     s = init
     for i in stream:
         s = fn(s, i)
-        yield(s)
+        yield (s)

@@ -1,5 +1,5 @@
 import unittest
-from ParserCoroutine import *
+from core_parser import *
 
 
 class ParserCoroutineTest(unittest.TestCase):

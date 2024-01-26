@@ -1,10 +1,10 @@
 from serial import Serial
-from SerialWrapper import read_serial
-from ParserCoroutine import flatmap_parse, flatten
-from PlotModel import plot_model
-from PlotCoroutine import plot
+from core_serial import read_serial
+from core_parser import flatmap_parse, flatten
+from core_model import plot_model
+from core_plot import plot
 from typing import Generator, Any
-from data import ImmutablePainState, PlotState
+from core_data import ImmutablePainState, PlotState
 
 def repository(serial: Serial):
     return read_serial(serial)
