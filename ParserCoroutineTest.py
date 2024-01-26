@@ -22,6 +22,26 @@ class ParserCoroutineTest(unittest.TestCase):
             pass
 
         self.assertEqual(expected, result)
+    
+    def test_end_data(self):
+        data = b"\0020\0000\0000\000\003"
+        expected = ImmutablePainState()
+
+        stream = (it for it in data)
+        for result in flatmap_parse(stream):
+            pass
+
+        self.assertEqual(expected, result)
+
+    def test_error_data(self):
+        data = b"\0020\0000\0000\000\000"
+        expected = ParserMessage.FAIL
+
+        stream = (it for it in data)
+        for result in flatmap_parse(stream):
+            pass
+
+        self.assertEqual(expected, result)
 
 
 if __name__ == "__main__":
