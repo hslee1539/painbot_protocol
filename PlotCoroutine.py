@@ -1,16 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.axes as axes
-from collections import deque
 from typing import Generator
 from dataclasses import dataclass
-
-
-# ui state
-@dataclass(frozen=True)
-class PlotState:
-    xs: list[int]
-    ys: list[float]
-    y_lim: tuple[int, int]
+from data import PlotState
 
 
 def plot(state: Generator[PlotState, None, None]):
