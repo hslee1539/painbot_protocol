@@ -1,46 +1,37 @@
 import matplotlib.pyplot as plt
 import matplotlib.axes as axes
 from collections import deque
+from typing import Generator
+from dataclasses import dataclass
 
 
-class PlotCoroutine:
-    def __init__(self, fig : plt.Figure,plot_size = 100):
-        self.fig = fig
-        self.plot_size = plot_size
+# ui state
+@dataclass(frozen=True)
+class PlotState:
+    xs: list[int]
+    ys: list[float]
+    y_lim: tuple[int, int]
 
-    def __enter__(self):
-        self._drawer = self._draw()
-        next(self._drawer)
-        return self._drawer
 
-    def __exit__(self, type, value, traceback):
-        pass
+def plot(state: Generator[PlotState, None, None]):
+    fig = plt.figure(figsize=[1, 1])
+    subplot = fig.add_subplot(1, 1, 1)
     
-    def _draw(self):
-        subplot = self.fig.add_subplot(1,1,1)
-        subplot : axes.Axes
-        x = tuple(range(self.plot_size))
-
-        def zeros(maxlen : int):
-            for _ in range(maxlen):
-                yield 0
-
-        y = deque(zeros(maxlen = self.plot_size), maxlen = self.plot_size)
-        
-        plt.connect("close_event", self._onClose)
-        self.life = True
-        while self.life:
-            y.append((yield "draw 완료... 저주파 전류값 받는 중..."))
+    try:
+        plt.connect("close_event", exit)
+        for next in state:
             subplot.clear()
-            subplot.set_title("저주파 전류")
-            subplot.set_ylim((0,100))
-            subplot.plot(x, y)
-            plt.draw()
-            plt.pause(0.0001)
-        return self._drawer
-    
-    def _onClose(self, event):
-        self.life = False
+            subplot.set_xlim((0, 50))
+            subplot.set_ylim(next.y_lim)
+            if len(next.xs) > 0:
+                subplot.plot(next.xs, next.ys)
+                plt.draw()
+            plt.pause(0.001)
+    except Exception as e:
+        print(e)
+        pass
+    finally:
+        plt.close(fig)
 
 
 """
@@ -49,22 +40,16 @@ class PlotCoroutine:
 """
 
 if __name__ == "__main__":
-    from ParserCoroutine import ParserCoroutine
-    from SerialWrapper import SerialWrapper
+
+    def dummy_model():
+        import random
+
+        for i in range(10000):
+            if i < 50:
+                xs = [it for it in range(i)]
+            else:
+                xs = [it for it in range(50)]
+            ys = [it % 50 + random.random() * 50 for it in xs]
+            yield PlotState(xs=xs, ys=ys, y_lim=(0, 100))
     
-    with PlotCoroutine(plt.figure(figsize=[1,1])) as plot:
-        with ParserCoroutine() as parser:
-            with SerialWrapper("debug") as ser:
-                try:
-                    while True:
-                        retval = parser.send( ser.read() )
-                        if type(retval) is dict:
-                            plot.send(retval["low frequency electric current"])
-                except StopIteration:
-                    pass
-
-    
-
-
-
-    
+    plot(dummy_model())
