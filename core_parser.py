@@ -1,4 +1,4 @@
-from data import (
+from core_data import (
     ParserMessage,
     MutableParserState,
     ImmutablePainState,

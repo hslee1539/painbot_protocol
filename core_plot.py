@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Generator
 from dataclasses import dataclass
-from data import PlotState
+from core_data import PlotState
 
 
 def plot(state: Generator[PlotState, None, None]):

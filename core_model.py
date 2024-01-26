@@ -1,6 +1,6 @@
-from data import ImmutablePainState, PlotState
+from core_data import ImmutablePainState, PlotState
 from typing import Generator, Any
-from GeneratorUtil import filterIsType, scan
+from core_generator_util import filterIsType, scan
 
 
 def __sum_state(state: PlotState, index_and_action: tuple[int, int]):

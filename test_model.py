@@ -1,5 +1,5 @@
 import unittest
-from PlotModel import *
+from core_model import *
 
 
 class PlotModelTest(unittest.TestCase):
